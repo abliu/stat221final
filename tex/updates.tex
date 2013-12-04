@@ -1,0 +1,158 @@
+\documentclass{article}
+\usepackage{amsmath}
+\renewcommand{\vec}[1]{\boldsymbol{#1}}
+\newcommand{\pd}[2]{\frac{\partial#1}{\partial#2}}
+
+\title{Statistics 221 Final Project: C++ team}
+\begin{document}
+\maketitle
+
+Here we derive the SGD and implicit updates for three commonly-used loss functions. The optimization problem is:
+
+\begin{equation}
+\min_{\theta}\left( \sum_{t} L(y_t, \hat{y_t}) + \frac{\lambda}{2}\|\vec{\theta}\|^2\right)
+\end{equation}
+
+where $\hat{y_t} = \textrm{sign}(\vec{x_t^{T}}\vec{\theta_t})$
+
+%% log loss
+\section{Log-loss}
+The log-loss function is given by:
+\begin{equation}
+L(y, \hat{y}) = \log(1+\exp(-y\hat{y}))
+\end{equation}
+
+\subsection{SGD update}
+The SGD update is given by:
+\begin{equation}
+\vec{\theta_{t+1}} = \vec{\theta_{t}} - \alpha_{t}\nabla Q(\vec{\theta_{t}}, y_t, \vec{x_t})
+\end{equation}
+
+where
+
+\begin{equation}
+Q(\vec{\theta_{t}}, y_t, \vec{x_t}) = \log\left(1+\exp(-y_t\cdot\vec{x_t^{T}}\vec{\theta_t})\right) + \frac{\lambda}{2}\|\vec{\theta_t}\|^2
+\end{equation}
+
+The gradient $\nabla Q(\vec{\theta_{t}}, y_t, \vec{x_t})$ can be calculated as follows:
+
+\begin{align*}
+\nabla Q(\vec{\theta_{t}}, y_t, \vec{x_t}) &= \left(\frac{1}{1+\exp(-y_t\cdot\vec{x_t^{T}}\vec{\theta_t})} \right)\left(\exp(-y_t\cdot\vec{x_t^{T}}\vec{\theta_t})\right)\left(-y_t\cdot\vec{x_t}\right) + \lambda\vec{\theta_t}\\
+&= \frac{-y_t\exp(-y_t\cdot\vec{x_t^{T}}\vec{\theta_t})}{1+\exp(-y_t\cdot\vec{x_t^{T}}\vec{\theta_t})}\cdot\vec{x_t} + \lambda\vec{\theta_t}\\
+&= \frac{-y_t}{\exp(y_t\cdot\vec{x_t^{T}}\vec{\theta_t})+1}\cdot\vec{x_t} + \lambda\vec{\theta_t}
+\end{align*}
+
+So, the SGD update for the log-loss function is:
+\begin{equation}
+\vec{\theta_{t+1}} = \vec{\theta_{t}} - \alpha_{t}\left( \frac{-y_t}{\exp(y_t\cdot\vec{x_t^{T}}\vec{\theta_t})+1}\cdot\vec{x_t} + \lambda\vec{\theta_t} \right)
+\end{equation}
+
+
+\subsection{Implicit update}
+The implicit update can be derived in much the same way as above. We have the following:
+
+\begin{align*}
+\vec{\theta_{t+1}} &= \vec{\theta_t} - \alpha_t \nabla Q(\vec{\theta_{t+1}}, y_t, \vec{x_t})\\
+&= \vec{\theta_t} - \alpha_t \left(\frac{-y_t}{\exp(y_t\cdot\vec{x_t^{T}}\vec{\theta_{t+1}})+1}\cdot\vec{x_t} + \lambda\vec{\theta_{t+1}} \right)
+\end{align*}
+
+
+%% hinge loss
+\section{Hinge loss}
+The hinge loss function is given by:
+\begin{equation}
+L(y, \hat{y}) = \max(0, 1-y\hat{y})
+\end{equation}
+\subsection{SGD update}
+The SGD update is given by:
+\begin{equation}
+\vec{\theta_{t+1}} = \vec{\theta_{t}} - \alpha_{t}\nabla Q(\vec{\theta_{t}}, y_t, \vec{x_t})
+\end{equation}
+
+where
+
+\begin{equation}
+Q(\vec{\theta_{t}}, y_t, \vec{x_t}) = \max(0, 1-y_t\cdot\vec{x_t^{T}}\vec{\theta_t}) + \frac{\lambda}{2}\|\vec{\theta_t}\|^2
+\end{equation}
+
+The gradient $\nabla Q(\vec{\theta_{t}}, y_t, \vec{x_t})$ can be calculated as follows, where we consider two cases depending on the sign of $1-y_t\cdot\vec{x_t^{T}}\vec{\theta_t}$:
+
+\begin{enumerate}
+\item If $1-y_t\cdot\vec{x_t^{T}}\vec{\theta_t} < 0$, then $Q(\vec{\theta_{t}}, y_t, \vec{x_t}) = \frac{\lambda}{2}\|\vec{\theta_t}\|^2$. Then,
+
+\begin{align*}
+\nabla Q(\vec{\theta_{t}}, y_t, \vec{x_t}) &= \nabla\left(\frac{\lambda}{2}\|\vec{\theta_t}\|^2\right)\\
+&= \lambda \vec{\theta_t}
+\end{align*}
+
+\item If $1-y_t\cdot\vec{x_t^{T}}\vec{\theta_t} \geq 0$, then $Q(\vec{\theta_{t}}, y_t, \vec{x_t}) = 1-y_t\cdot\vec{x_t^{T}}\vec{\theta_t}+\frac{\lambda}{2}\|\vec{\theta_t}\|^2$. Then,
+
+\begin{align*}
+\nabla Q(\vec{\theta_{t}}, y_t, \vec{x_t}) &= \nabla\left(1-y_t\cdot\vec{x_t^{T}}\vec{\theta_t}+\frac{\lambda}{2}\|\vec{\theta_t}\|^2\right)\\
+&= \nabla\left( -y_t\cdot\vec{x_t^{T}}\vec{\theta_t} \right) + \lambda \vec{\theta_t}\\
+&= -y_t\cdot\vec{x_t} + \lambda\vec{\theta_t}
+\end{align*}
+
+where the last step is accomplished by noting that:
+\begin{align*}
+\nabla_{\theta}\left(\vec{x^{T}}\vec{\theta}\right) &= \nabla_{\theta}\left(\sum_{i=1}^{|\vec{x}|} x_i\theta_i\right)\\
+&= \left( \pd{}{\theta_1}\left(\sum_{i=1}^{|\vec{x}|} x_i\theta_i\right), \pd{}{\theta_2}\left(\sum_{i=1}^{|\vec{x}|} x_i\theta_i\right), \ldots \right)\\
+&= \left( x_1, x_2, \ldots \right)\\
+&= \vec{x}
+\end{align*}
+
+\end{enumerate}
+
+Putting these results together, we have that:
+\begin{equation}
+\vec{\theta_{t+1}} = \vec{\theta_t} - \alpha_t \left\{ 
+	\begin{array}{lr}
+		\lambda\vec{\theta_t} &  y_t\cdot\vec{x_t^{T}}\vec{\theta_t} > 1\\
+		\lambda\vec{\theta_t} - y_t\vec{x_t} &  \textrm{otherwise}
+	\end{array}
+\right.
+\end{equation}
+
+\subsection{Implicit update}
+We now derive the implicit update for the hinge loss, which is given by:
+\begin{equation}
+\vec{\theta_{t+1}} = \vec{\theta_{t}} - \alpha_{t}\nabla Q(\vec{\theta_{t+1}}, y_t, \vec{x_t})
+\end{equation}
+
+The calculations are very similar to the SGD derivation above, and for the two cases depending on the sign of $1-y_t\cdot\vec{x_t^{T}}\vec{\theta_{t+1}}$ are:
+
+\begin{enumerate}
+\item If $1-y_t\cdot\vec{x_t^{T}}\vec{\theta_{t+1}} < 0$, then
+\begin{equation*}
+\nabla Q(\vec{\theta_{t+1}}, y_t, \vec{x_t}) = \lambda\vec{\theta_{t+1}}
+\end{equation*}
+
+Then, substituting this result into the implicit update equation above, we can solve to find:
+\begin{equation}
+\vec{\theta_{t+1}} = \frac{1}{1+\lambda\alpha_t}\vec{\theta_t}
+\end{equation}
+
+\item If $1-y_t\cdot\vec{x_t^{T}}\vec{\theta_{t+1}} \geq 0$, then 
+\begin{equation*}
+\nabla Q(\vec{\theta_{t+1}}, y_t, \vec{x_t}) = -y_t\cdot\vec{x_t} + \lambda\vec{\theta_{t+1}}
+\end{equation*}
+\end{enumerate}
+
+Then, substituting this result into the implicit update equation above, we can solve to find:
+\begin{equation}
+\vec{\theta_{t+1}} = \frac{1}{1+\lambda\alpha_t}\left(\vec{\theta_t} + \alpha_t y_t\cdot\vec{x_t}\right)
+\end{equation}
+
+Note that during implementation, we should be careful to make sure that we check the sign of $1-y_t\cdot\vec{x_t^{T}}\vec{\theta_{t+1}}$ after the update, as the derivation of the implicit updates forced an assumption of the sign to begin with. If the assumption was wrong, then the other update function should be used.
+
+%% squared loss
+\section{Squared-loss}
+The squared-loss function is given by:
+\begin{equation}
+L(y, \hat{y}) = (y-\hat{y})^2
+\end{equation}
+
+\subsection{SGD update}
+
+\subsection{Implicit update}
+\end{document}
