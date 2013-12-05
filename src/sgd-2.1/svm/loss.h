@@ -21,7 +21,7 @@
 
 #include <cmath>
 
-// IMPORTANT: Use the constants below to specify the log functions.  Do not use the name of the struct.
+// IMPORTANT: Use the constants below to specify the loss functions.  Do not use the name of the struct.
 #define LOG_LOSS 1
 #define HINGE_LOSS 2
 

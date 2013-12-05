@@ -133,12 +133,9 @@ SvmIsgd::trainOne(const SVector &x, double y, double eta)
 
 #if LOSS == HINGE_LOSS
 
-   // implicit updates
-  //double wDivisor_temp = wDivisor * (1 + lambda * eta);
-
   if(1 - y * dot(x, w) / (1 + lambda * eta) < 0)
   {
-    w.scale(1 / (1 + lambda * eta));
+    wDivisor *= (1 + lambda * eta);
   }
   else
   {
@@ -146,14 +143,14 @@ SvmIsgd::trainOne(const SVector &x, double y, double eta)
     double x_dot_w_next = 0;
     for(const SVector::Pair *p = x; p->i>=0; p++)
     {
-      double w_i = w.get(p->i);
+      double w_i = w.get(p->i) / wDivisor;
       double w_i_next = (1 / (1 + lambda * eta)) * (w_i + p->v * eta * y);
       x_dot_w_next += p->v * w_i_next;
     }
 
     if(1 - y * x_dot_w_next >= 0)
     {
-      w.scale(1 / (1 + lambda * eta));
+      wDivisor *= (1 + lambda * eta);
       w.add(x, eta*y);
     }
     else
@@ -168,29 +165,6 @@ SvmIsgd::trainOne(const SVector &x, double y, double eta)
 #else
   #error Loss function not supported
 #endif
-
-
-  /*
-  double s = dot(w,x) / wDivisor + wBias;
-
-  // update for regularization term
-  wDivisor = wDivisor / (1 - eta * lambda);
-  if (wDivisor > 1e5) renorm();
-  // update for loss term
-  double d = LOSS::dloss(s, y);
-  // Here is the update step
-    // w_{t+1} = w_t + (eta * dloss(s, y) * wDivisor) * x
-  if (d != 0)
-    w.add(x, eta * d * wDivisor);
-  // same for the bias
-#if BIAS
-  double etab = eta * 0.01;
-#if REGULARIZED_BIAS
-  wBias *= (1 - etab * lambda);
-#endif
-  wBias += etab * d;
-#endif
-  */
 
 }
 
