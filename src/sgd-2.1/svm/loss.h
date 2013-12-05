@@ -21,8 +21,13 @@
 
 #include <cmath>
 
+// IMPORTANT: Use the constants below to specify the log functions.  Do not use the name of the struct.
+#define LOG_LOSS 1
+#define HINGE_LOSS 2
+
 struct LogLoss
 {
+
   // logloss(a,y) = log(1+exp(-a*y))
   static double loss(double a, double y)
   {
@@ -47,6 +52,7 @@ struct LogLoss
 
 struct HingeLoss
 {
+
   // hingeloss(a,y) = max(0, 1-a*y)
   static double loss(double a, double y)
   {
@@ -113,3 +119,19 @@ struct SmoothHingeLoss
 };
 
 #endif
+
+
+template <int n>
+struct LossFunction  {
+  static const int VALUE;
+};
+template <>
+struct LossFunction<LOG_LOSS> {
+  static const struct LogLoss VALUE;
+};
+template <>
+struct LossFunction<HINGE_LOSS> {
+  static const struct HingeLoss VALUE;
+};
+
+

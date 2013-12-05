@@ -114,7 +114,7 @@ SvmSgd::testOne(const SVector &x, double y, double *ploss, double *pnerr)
 {
   double s = dot(w,x) / wDivisor + wBias;
   if (ploss)
-    *ploss += LOSS::loss(s, y);
+    *ploss += LossFunction<LOSS>::VALUE.loss(s, y);
   if (pnerr)
     *pnerr += (s * y <= 0) ? 1 : 0;
   return s;
@@ -129,7 +129,7 @@ SvmSgd::trainOne(const SVector &x, double y, double eta)
   wDivisor = wDivisor / (1 - eta * lambda);
   if (wDivisor > 1e5) renorm();
   // update for loss term
-  double d = LOSS::dloss(s, y);
+  double d = LossFunction<LOSS>::VALUE.dloss(s, y);
   if (d != 0)
     w.add(x, eta * d * wDivisor);
   // same for the bias

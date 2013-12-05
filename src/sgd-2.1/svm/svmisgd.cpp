@@ -115,7 +115,7 @@ SvmIsgd::testOne(const SVector &x, double y, double *ploss, double *pnerr)
   double s = dot(w,x) / wDivisor + wBias;
 
   if (ploss)
-    *ploss += LOSS::loss(s, y);
+    *ploss += LossFunction<LOSS>::VALUE.loss(s, y);
   if (pnerr)
     *pnerr += (s * y <= 0) ? 1 : 0;
   return s;
@@ -125,6 +125,52 @@ SvmIsgd::testOne(const SVector &x, double y, double *ploss, double *pnerr)
 void
 SvmIsgd::trainOne(const SVector &x, double y, double eta)
 {
+
+#if BIAS == 0
+#else
+  #error bias not supported
+#endif
+
+#if LOSS == HINGE_LOSS
+
+   // implicit updates
+  //double wDivisor_temp = wDivisor * (1 + lambda * eta);
+
+  if(1 - y * dot(x, w) / (1 + lambda * eta) < 0)
+  {
+    w.scale(1 / (1 + lambda * eta));
+  }
+  else
+  {
+    // efficiently compute dot(x, w_{t+1})
+    double x_dot_w_next = 0;
+    for(const SVector::Pair *p = x; p->i>=0; p++)
+    {
+      double w_i = w.get(p->i);
+      double w_i_next = (1 / (1 + lambda * eta)) * (w_i + p->v * eta * y);
+      x_dot_w_next += p->v * w_i_next;
+    }
+
+    if(1 - y * x_dot_w_next >= 0)
+    {
+      w.scale(1 / (1 + lambda * eta));
+      w.add(x, eta*y);
+    }
+    else
+    {
+      // do nothing
+
+    }
+  }
+
+	if (wDivisor > 1e5) renorm();
+
+#else
+  #error Loss function not supported
+#endif
+
+
+  /*
   double s = dot(w,x) / wDivisor + wBias;
 
   // update for regularization term
@@ -144,6 +190,8 @@ SvmIsgd::trainOne(const SVector &x, double y, double eta)
 #endif
   wBias += etab * d;
 #endif
+  */
+
 }
 
 
@@ -156,6 +204,7 @@ SvmIsgd::train(int imin, int imax, const xvec_t &xp, const yvec_t &yp, const cha
   assert(eta0 > 0);
   for (int i=imin; i<=imax; i++)
     {
+      //if(i % 10000 == 0) cout << "iteration: " << i << endl;
       double eta = eta0 / (1 + lambda * eta0 * t);
       trainOne(xp.at(i), yp.at(i), eta);
       t += 1;
