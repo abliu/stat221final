@@ -142,7 +142,7 @@ SvmAsgd::testOne(const SVector &x, double y, double *ploss, double *pnerr)
   s = s / aDivisor + aBias;
   // accumulate loss and errors
   if (ploss)
-    *ploss += LOSS::loss(s, y);
+    *ploss += LossFunction<LOSS>::VALUE.loss(s, y);
   if (pnerr)
     *pnerr += (s * y <= 0) ? 1 : 0;
   return s;
@@ -159,7 +159,7 @@ SvmAsgd::trainOne(const SVector &x, double y, double eta, double mu)
   // SGD update for regularization term
   wDivisor = wDivisor / (1 - eta * lambda);
   // SGD update for loss term
-  double d = LOSS::dloss(s, y);
+  double d = LossFunction<LOSS>::VALUE.dloss(s, y);
   double etd = eta * d * wDivisor;
   if (etd != 0)
     w.add(x, etd);
