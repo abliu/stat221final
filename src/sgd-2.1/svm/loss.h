@@ -24,6 +24,7 @@
 // IMPORTANT: Use the constants below to specify the loss functions.  Do not use the name of the struct.
 #define LOG_LOSS 1
 #define HINGE_LOSS 2
+#define SQUARED_LOSS 3
 
 struct LogLoss
 {
@@ -118,8 +119,20 @@ struct SmoothHingeLoss
   }
 };
 
-#endif
+struct SquaredLoss
+{
 
+  static double loss(double a, double y)
+  {
+    double diff = a - y;
+    return diff * diff;
+  }
+  // -dloss(a,y)/da
+  static double dloss(double a, double y)
+  {
+    return -2 * (a - y);
+  }
+};
 
 template <int n>
 struct LossFunction  {
@@ -133,5 +146,12 @@ template <>
 struct LossFunction<HINGE_LOSS> {
   static const struct HingeLoss VALUE;
 };
+template <>
+struct LossFunction<SQUARED_LOSS> {
+  static const struct SquaredLoss VALUE;
+};
+
+#endif
+
 
 

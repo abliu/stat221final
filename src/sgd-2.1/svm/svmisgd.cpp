@@ -162,6 +162,12 @@ SvmIsgd::trainOne(const SVector &x, double y, double eta)
 
 	if (wDivisor > 1e5) renorm();
 
+#elif LOSS == SQUARED_LOSS
+
+	w.add(x, 2 * eta * y * wDivisor);
+	wDivisor *= (1 + dot(x, x) * 2 * eta);
+
+	if (wDivisor > 1e5) renorm();
 #else
   #error Loss function not supported
 #endif
@@ -178,7 +184,7 @@ SvmIsgd::train(int imin, int imax, const xvec_t &xp, const yvec_t &yp, const cha
   assert(eta0 > 0);
   for (int i=imin; i<=imax; i++)
     {
-      //if(i % 10000 == 0) cout << "iteration: " << i << endl;
+      if(i % 10000 == 0) cout << "iteration: " << i << endl;
       double eta = eta0 / (1 + lambda * eta0 * t);
       trainOne(xp.at(i), yp.at(i), eta);
       t += 1;
