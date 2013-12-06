@@ -154,5 +154,37 @@ L(y, \hat{y}) = (y-\hat{y})^2
 
 \subsection{SGD update}
 
+The SGD update is given by:
+\begin{equation}
+\vec{\theta_{t+1}} = \vec{\theta_{t}} - \alpha_{t}\nabla Q(\vec{\theta_{t}}, y_t, \vec{x_t})
+\end{equation}
+
+where
+
+\begin{equation}
+Q(\vec{\theta_{t}}, y_t, \vec{x_t}) = \left(y_t - \vec{x_t^T}\vec{\theta_t}\right)^2 + \frac{\lambda}{2}\|\vec{\theta_t}\|^2
+\end{equation}
+
+The gradient $\nabla Q(\vec{\theta_{t}}, y_t, \vec{x_t})$ can be calculated as follows:
+
+\begin{align*}
+\nabla Q(\vec{\theta_{t}}, y_t, \vec{x_t}) &= 2\left(y_t - \vec{x_t^T}\vec{\theta_t}\right)\left(-\vec{x_t}\right)\\
+&= -2(y_t-\vec{x_t^T}\vec{\theta_t})\vec{x_t}\\
+\end{align*}
+
+So, the SGD update for the log-loss function is:
+\begin{equation}
+\vec{\theta_{t+1}} = \vec{\theta_{t}} +2 \alpha_{t}\left( y_t-\vec{x_t^T}\vec{\theta_t} \right )\vec{x_t}
+\end{equation}
+
+
 \subsection{Implicit update}
+
+The implicit update can be derived in much the same way as above. We have the following:
+
+\begin{align*}
+\vec{\theta_{t+1}} &= \vec{\theta_t} - \alpha_t \nabla Q(\vec{\theta_{t+1}}, y_t, \vec{x_t})\\
+&= \vec{\theta_{t}} +2 \alpha_{t}\left( y_t-\vec{x_t^T}\vec{\theta_{t+1}} \right )\vec{x_t}
+\end{align*}
+
 \end{document}
