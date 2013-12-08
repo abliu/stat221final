@@ -187,8 +187,8 @@ The implicit update can be derived in much the same way as above. We have the fo
 \vec{\theta_{t+1}} &= \vec{\theta_{t}} +2 \alpha_{t}\left( y_t-\vec{x_t^T}\vec{\theta_{t+1}} \right )\vec{x_t} - \alpha_t\lambda\vec{\theta_{t+1}}\\
 (1+\alpha_t\lambda)\vec{\theta_{t+1}} &= \vec{\theta_{t}} +2 \alpha_{t}\left( y_t-\vec{x_t^T}\vec{\theta_{t+1}} \right )\vec{x_t}\\
 (1+\alpha_t\lambda)\vec{\theta_{t+1}} &= \vec{\theta_{t}} + 2\alpha_t y_t \vec{x_t} - 2\alpha_t\vec{x_t^T}\vec{\theta_{t+1}}\vec{x_t}\\
-\left[(1+\alpha_t\lambda)I + 2\alpha_t\vec{x_t^T}\vec{x_t}\right]\vec{\theta_{t+1}} &= \vec{\theta_t} + 2\alpha_t y_t\vec{x_t}\\
-\vec{\theta_{t+1}} &= \left[(1+\alpha_t\lambda)I + 2\alpha_t\vec{x_t^T}\vec{x_t}\right]^{-1}\left(\vec{\theta_t} + 2\alpha_t y_t \vec{x_t}\right)
+\left[(1+\alpha_t\lambda)I + 2\alpha_t\vec{x_t^T}\vec{x_t}I\right]\vec{\theta_{t+1}} &= \vec{\theta_t} + 2\alpha_t y_t\vec{x_t}\\
+\vec{\theta_{t+1}} &= \left[(1+\alpha_t\lambda)I + 2\alpha_t\vec{x_t^T}\vec{x_t}I\right]^{-1}\left(\vec{\theta_t} + 2\alpha_t y_t \vec{x_t}\right)
 \end{align*}
 
 \end{document}
