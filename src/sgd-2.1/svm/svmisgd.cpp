@@ -131,8 +131,10 @@ void squareMult(const SVector& x, const FVector& w, SVector& out){
     double out_i = 0;
     for(const SVector::Pair *p_j = x; p_j->i>=0; p_j++)
     {
-      out_i += p_i->v * p_j->v * w[p_j->i];
+      out_i += p_j->v * w[p_j->i];
     }
+    out_i *= p_i->v;
+
     out.set(p_i->i, out_i);
   }
 }
@@ -189,12 +191,12 @@ SvmIsgd::trainOne(const SVector &x, double y, double eta)
 	g *= 2 * eta;
 	g /= 1 + eta * lambda;
 
-	w.add(x, 2 * eta * y * wDivisor);
-	SVector w_sub;
-	squareMult(x, w, w_sub);
-	w.combine(1 / (1 + eta*lambda), w_sub, -2 * eta / ((1 + g)*(1 + eta * lambda)*(1 + eta * lambda)));
+	w.add(x, 2 * eta * y );
+	w.add(x, -dot(x, w) * 2 * eta / ((1 + g)*(1 + eta * lambda)));
+	wDivisor *= (1 + eta * lambda);
 
 	if (wDivisor > 1e5) renorm();
+
 #else
   #error Loss function not supported
 #endif
@@ -211,7 +213,7 @@ SvmIsgd::train(int imin, int imax, const xvec_t &xp, const yvec_t &yp, const cha
   assert(eta0 > 0);
   for (int i=imin; i<=imax; i++)
     {
-      if(i % 10000 == 0) cout << "iteration: " << i << endl;
+      //if(i % 10000 == 0) cout << "iteration: " << i << endl;
       double eta = eta0 / (1 + lambda * eta0 * t);
       trainOne(xp.at(i), yp.at(i), eta);
       t += 1;
