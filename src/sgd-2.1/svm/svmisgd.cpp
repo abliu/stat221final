@@ -121,24 +121,6 @@ SvmIsgd::testOne(const SVector &x, double y, double *ploss, double *pnerr)
   return s;
 }
 
-// computes x * x^t * w and stores the result in the last argument
-void squareMult(const SVector& x, const FVector& w, SVector& out){
-
-  assert(x.size() <= w.size());
-
-  for(const SVector::Pair *p_i = x; p_i->i>=0; p_i++)
-  {
-    double out_i = 0;
-    for(const SVector::Pair *p_j = x; p_j->i>=0; p_j++)
-    {
-      out_i += p_j->v * w[p_j->i];
-    }
-    out_i *= p_i->v;
-
-    out.set(p_i->i, out_i);
-  }
-}
-
 /// Perform one iteration of the SGD algorithm with specified gains
 void
 SvmIsgd::trainOne(const SVector &x, double y, double eta)
@@ -151,7 +133,8 @@ SvmIsgd::trainOne(const SVector &x, double y, double eta)
 
 #if LOSS == HINGE_LOSS
 
-  if(1 - y * dot(x, w) / (1 + lambda * eta) < 0)
+  double x_dot_w = dot(x, w) / wDivisor;
+  if(1 - y * x_dot_w / (1 + lambda * eta) < 0)
   {
     wDivisor *= (1 + lambda * eta);
   }
@@ -168,8 +151,8 @@ SvmIsgd::trainOne(const SVector &x, double y, double eta)
 
     if(1 - y * x_dot_w_next >= 0)
     {
+      w.add(x, eta*y*wDivisor);
       wDivisor *= (1 + lambda * eta);
-      w.add(x, eta*y);
     }
     else
     {
@@ -191,9 +174,17 @@ SvmIsgd::trainOne(const SVector &x, double y, double eta)
 	g *= 2 * eta;
 	g /= 1 + eta * lambda;
 
-	w.add(x, 2 * eta * y );
-	w.add(x, -dot(x, w) * 2 * eta / ((1 + g)*(1 + eta * lambda)));
-	wDivisor *= (1 + eta * lambda);
+	w.add(x, 2 * eta * y * wDivisor);
+
+	double x_dot_w = dot(x, w);
+	double div = (1 + eta * lambda);
+	double fact = -x_dot_w * 2 * eta / ((1 + g)*(1 + eta * lambda));
+
+	// Using combine gives better results (don't know why -- should be identical), but it is slower.
+	//w.combine(1/div, x, fact/div);
+
+	w.add(x, fact);
+	wDivisor *= div;
 
 	if (wDivisor > 1e5) renorm();
 
