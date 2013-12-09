@@ -168,13 +168,13 @@ Q(\vec{\theta_{t}}, y_t, \vec{x_t}) = \left(y_t - \vec{x_t^T}\vec{\theta_t}\righ
 The gradient $\nabla Q(\vec{\theta_{t}}, y_t, \vec{x_t})$ can be calculated as follows:
 
 \begin{align*}
-\nabla Q(\vec{\theta_{t}}, y_t, \vec{x_t}) &= 2\left(y_t - \vec{x_t^T}\vec{\theta_t}\right)\left(-\vec{x_t}\right)\\
-&= -2(y_t-\vec{x_t^T}\vec{\theta_t})\vec{x_t}\\
+\nabla Q(\vec{\theta_{t}}, y_t, \vec{x_t}) &= 2\left(y_t - \vec{x_t^T}\vec{\theta_t}\right)\left(-\vec{x_t}\right) + \lambda\vec{\theta_t}\\
+&= -2(y_t-\vec{x_t^T}\vec{\theta_t})\vec{x_t} + \lambda\vec{\theta_t}\\
 \end{align*}
 
 So, the SGD update for the log-loss function is:
 \begin{equation}
-\vec{\theta_{t+1}} = \vec{\theta_{t}} +2 \alpha_{t}\left( y_t-\vec{x_t^T}\vec{\theta_t} \right )\vec{x_t}
+\vec{\theta_{t+1}} = \vec{\theta_{t}} +2 \alpha_{t}\left( y_t-\vec{x_t^T}\vec{\theta_t} \right )\vec{x_t} - \alpha_t\lambda\vec{\theta_t}
 \end{equation}
 
 
@@ -184,7 +184,11 @@ The implicit update can be derived in much the same way as above. We have the fo
 
 \begin{align*}
 \vec{\theta_{t+1}} &= \vec{\theta_t} - \alpha_t \nabla Q(\vec{\theta_{t+1}}, y_t, \vec{x_t})\\
-&= \vec{\theta_{t}} +2 \alpha_{t}\left( y_t-\vec{x_t^T}\vec{\theta_{t+1}} \right )\vec{x_t}
+\vec{\theta_{t+1}} &= \vec{\theta_{t}} +2 \alpha_{t}\left( y_t-\vec{x_t^T}\vec{\theta_{t+1}} \right )\vec{x_t} - \alpha_t\lambda\vec{\theta_{t+1}}\\
+(1+\alpha_t\lambda)\vec{\theta_{t+1}} &= \vec{\theta_{t}} +2 \alpha_{t}\left( y_t-\vec{x_t^T}\vec{\theta_{t+1}} \right )\vec{x_t}\\
+(1+\alpha_t\lambda)\vec{\theta_{t+1}} &= \vec{\theta_{t}} + 2\alpha_t y_t \vec{x_t} - 2\alpha_t\vec{x_t^T}\vec{\theta_{t+1}}\vec{x_t}\\
+\left[(1+\alpha_t\lambda)I + 2\alpha_t\vec{x_t^T}\vec{x_t}I\right]\vec{\theta_{t+1}} &= \vec{\theta_t} + 2\alpha_t y_t\vec{x_t}\\
+\vec{\theta_{t+1}} &= \left[(1+\alpha_t\lambda)I + 2\alpha_t\vec{x_t^T}\vec{x_t}I\right]^{-1}\left(\vec{\theta_t} + 2\alpha_t y_t \vec{x_t}\right)
 \end{align*}
 
 \end{document}
