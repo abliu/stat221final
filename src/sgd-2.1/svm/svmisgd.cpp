@@ -121,6 +121,22 @@ SvmIsgd::testOne(const SVector &x, double y, double *ploss, double *pnerr)
   return s;
 }
 
+// computes x * x^t * w and stores the result in the last argument
+void squareMult(const SVector& x, const FVector& w, SVector& out){
+
+  assert(x.size() <= w.size());
+
+  for(const SVector::Pair *p_i = x; p_i->i>=0; p_i++)
+  {
+    double out_i = 0;
+    for(const SVector::Pair *p_j = x; p_j->i>=0; p_j++)
+    {
+      out_i += p_i->v * p_j->v * w[p_j->i];
+    }
+    out.set(p_i->i, out_i);
+  }
+}
+
 /// Perform one iteration of the SGD algorithm with specified gains
 void
 SvmIsgd::trainOne(const SVector &x, double y, double eta)
@@ -164,8 +180,19 @@ SvmIsgd::trainOne(const SVector &x, double y, double eta)
 
 #elif LOSS == SQUARED_LOSS
 
+	// first compute the trace g
+	double g = 0;
+	for(const SVector::Pair *p = x; p->i>=0; p++)
+	{
+	  g += p->v * p->v;
+	}
+	g *= 2 * eta;
+	g /= 1 + eta * lambda;
+
 	w.add(x, 2 * eta * y * wDivisor);
-	wDivisor *= (1 + dot(x, x) * 2 * eta);
+	SVector w_sub;
+	squareMult(x, w, w_sub);
+	w.combine(1 / (1 + eta*lambda), w_sub, -2 * eta / ((1 + g)*(1 + eta * lambda)*(1 + eta * lambda)));
 
 	if (wDivisor > 1e5) renorm();
 #else
