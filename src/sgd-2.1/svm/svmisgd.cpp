@@ -23,6 +23,7 @@
 #include <vector>
 #include <cstdlib>
 #include <cmath>
+#include <cerrno>
 
 #include "assert.h"
 #include "vectors.h"
@@ -187,6 +188,17 @@ SvmIsgd::trainOne(const SVector &x, double y, double eta)
 	wDivisor *= div;
 
 	if (wDivisor > 1e5) renorm();
+
+#elif LOSS == LOG_LOSS
+
+	double x_dot_w = dot(x, w);
+	double h = exp(x_dot_w) / (1 + exp(x_dot_w));
+	if(errno == ERANGE){
+	  // handle case where we get a value out of range?
+	  errno = 0;
+	}
+	double y_pos = y > 0 ? 1 : 0;
+	w.add(x, eta * (y_pos - h));
 
 #else
   #error Loss function not supported
