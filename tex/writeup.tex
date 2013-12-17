@@ -3,6 +3,7 @@
 \usepackage{courier}
 \usepackage{enumerate}
 \usepackage{fullpage}
+\usepackage{graphicx}
 \renewcommand{\vec}[1]{\boldsymbol{#1}}
 \newcommand{\pd}[2]{\frac{\partial#1}{\partial#2}}
 \newcommand{\var}{\mathop{\mathrm{Var}}}
@@ -251,7 +252,9 @@ The implicit update can be derived in much the same way as above. We have the fo
 
 \item We downloaded and compiled Bottou's SGD package.
 \item See \texttt{svmimplicit.cpp}.
-\item Here we report the results from running the SGD experiment. We compare performance of baseline SGD, ASGD, and our implicit SGD for each of the log loss and hinge loss functions. (We leave out LibLinear because we could not successfully run the training program without using too much memory.) Unless otherwise stated, SGD algorithms use their default regularization parameters (close to $\lambda = 10^{-5}$) and learning rate $\eta_t = \frac{\eta_0}{1+ \lambda\eta_0 t}$, with $\eta_0$ picked by the Bottou package unless otherwise specified. We measure cost as $$C = L + 0.5 \lambda ||\Theta||^2$$ where $L$ denotes the average loss over all test runs and $\Theta$ the parameter vector.
+\item Here we report the results from running the SGD experiment. We compare performance of baseline SGD, ASGD, and our implicit SGD for each of the log loss and hinge loss functions and each of the RCV1 and alpha datasets across three metrics: training time, test (misclassification) error, and cost, measured as  $$C = L + 0.5 \lambda ||\Theta||^2$$ where $L$ denotes the average loss over all test runs and $\Theta$ the parameter vector. (We leave out LibLinear because we could not format the data correctly in time.) We ran all the experiments on Andrew's personal computer using one core, and the longest run in terms of computation time that we tried was approximately 20 seconds. Each run was done individually from the command line (instead of packaging all runs into one script) for easier debugging and due to the small number of runs necessary.
+
+Unless otherwise stated, SGD algorithms use their default regularization parameters (close to $\lambda = 10^{-5}$) and learning rate $\eta_t = \frac{\eta_0}{1+ \lambda\eta_0 t}$ as specified in the Bottou SVM README, with $\eta_0$ picked by the Bottou package unless otherwise specified. We chose these regularization parameters because they optimized the performance of each run.
 
 \begin{enumerate}[1.]
 \item RCV1 Benchmark, hinge-loss.
@@ -298,12 +301,28 @@ Implicit SGD here was improved by using default $\lambda = 10^{-5}$ (whereas SGD
 \end{enumerate}
 \end{enumerate}
 
+We also wanted to test the robustness of each method to misspecification of parameters such as regularization rate and learning rate. Looking at our results, implicit SGD is only noticeably performing better (considering training time and test error) in hinge-loss on the RCV1 dataset, so we considered each algorithm's performance while varying its regularization rate. By taking the test error at the end of 1 second of training, we find that implicit SGD is slightly more robust to changes in regularization rate than the other two:
+
+\begin{center}
+\includegraphics[width=140mm]{regularization_robustness.png}\\
+\includegraphics[width=140mm]{eta0_robustness.png}
+\includegraphics[width=140mm]{etat_robustness.png}
+\end{center}
+
+\section{Discussion}
+
+Our first main result is that implicit SGD only outperformed baseline SGD and ASGD in both training time and test error in the hinge-loss case for the RCV1 dataset while doing as well or worse than ASGD in the other cases (and always better than baseline SGD). In hinge-loss for RCV1, implicit SGD converged slightly more quickly and with less error, and in log-loss, it converged more quickly than the other implementations but with slightly more error. In alpha, it converged at approximately the same rate as ASGD (and faster than baseline SGD) and had error on par with ASGD, and better than baseline SGD.
+
+We hypothesized that our implicit SGD implementation would (a) have lower error than other implementations, fixing convergence time, and (b) have lower convergence time, fixing error. That this did not happen is likely not due to incorrect derivation equations but could follow from bugs in our implementation, since we checked our implicit SGD update equations with Panos. However, our implementations' performance is quite close to the SGD and ASGD from the Bottou package, which suggests that the update equations were coded correctly. A more likely source of this underperformance is the tradeoff between making our code faster and computing things exactly; for instance, the \texttt{FVector combine} function used for adding was more exact but slower. Another possible source of underperformance was our inability to account for nonzero bias in our classifier, which required us to set the bias for all our classifiers to be zero (including baseline SGD and ASGD). This restriction may have affected implicit SGD disproportionately.
+
+Our second main result is that implicit SGD is more robust than both other SGDs to misspecifications in regularization coefficient, and more robust than baseline SGD in misspecifications in learning rates. First, analyzing the graph of regularization parameter versus test error, we see that implicit SGD achieves a dramatically lower test error than baseline SGD for values of $\lambda = 10^{-i}$ for $i \ge 4$ (which happens to be close to Bottou's recommended regularization coefficient $\lambda = 10^{-5}$) and a slightly lower test error than ASGD. Next, we analyzed the sensitivity of each implementation to initial learning rates $\eta_0$, finding no significant differences between each implementation's robustness while varying $\eta_0$ (all test errors were still confined to $(5.22,5.29)$ after taking the implementation test errors by 1 second of training time). However, we did find that our implicit SGD was more robust than baseline SGD to different rates of decay $\beta$ in the learning rate equation $$\eta_t = \frac{\eta_0}{1 + \beta \lambda \eta_0 t}$$ but ASGD is even more robust than our implicit SGD. This might be due to implicit SGD needing higher learning rates overall, so that the ranges of values on which implicit SGD versus ASGD are more robust differ.
+
 \section{Contributions}
 On the implementation side, Adam did a majority of the work, being the first to download Bottou's SGD package and get it working (1.4b), and implementing each of the loss functions with implicit update (1.4c), as well as working with Brandon to figure out some of the math associated with those updates. He also debugged the \texttt{svmimplicit.cpp} code and did a little tuning of the parameters.
 
 On the analysis side, Brandon derived the SGD and implicit updates for the three loss functions (1.4a). Jason gave the intuition for Sakrison's method and the implicit method computing the MLE (1.1), and performed the derivations of the desired properties of GLMs (1.2).
 
-Finishing off the implementation, Andrew ran Adam's implicit SGD, along with baseline SGD and AGSD, on RCV1 and alpha datasets, collecting training time, test error, and cost data (1.4d, e). He tried but failed to get LibLinear working. He also did a little work to compile each team member's tex into this writeup.
+Finishing off the implementation, Andrew ran Adam's implicit SGD, along with baseline SGD and AGSD, on RCV1 and alpha datasets, collecting training time, test error, and cost data (1.4d, e). He tried but failed to get LibLinear working. He also did a little work to compile each team member's tex into this writeup and wrote the results and discussion sections (including the plots and data tables).
 
 Adam and Brandon made large contributions in terms of keeping the team going forward, communicating their progress to the group and ensuring the group stayed knowledgeable, and starting on their work early so that the rest of the team had an easier time finishing off the missing pieces at the end.
 
