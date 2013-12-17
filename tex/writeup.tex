@@ -8,6 +8,7 @@
 \newcommand{\var}{\mathop{\mathrm{Var}}}
 
 \title{Statistics 221 Final Project: C++ team}
+\author{Adam Petcher, Brandon Sim, Andrew Liu, Jason Sclar, Rohit Ramani}
 \begin{document}
 \maketitle
 
@@ -296,5 +297,14 @@ Implicit SGD here was improved by using default $\lambda = 10^{-5}$ (whereas SGD
 \end{center}
 \end{enumerate}
 \end{enumerate}
+
+\section{Contributions}
+On the implementation side, Adam did a majority of the work, being the first to download Bottou's SGD package and get it working (1.4b), and implementing each of the loss functions with implicit update (1.4c), as well as working with Brandon to figure out some of the math associated with those updates. He also debugged the \texttt{svmimplicit.cpp} code and did a little tuning of the parameters.
+
+On the analysis side, Brandon derived the SGD and implicit updates for the three loss functions (1.4a). Jason gave the intuition for Sakrison's method and the implicit method computing the MLE (1.1), and performed the derivations of the desired properties of GLMs (1.2).
+
+Finishing off the implementation, Andrew ran Adam's implicit SGD, along with baseline SGD and AGSD, on RCV1 and alpha datasets, collecting training time, test error, and cost data (1.4d, e). He tried but failed to get LibLinear working. He also did a little work to compile each team member's tex into this writeup.
+
+Adam and Brandon made large contributions in terms of keeping the team going forward, communicating their progress to the group and ensuring the group stayed knowledgeable, and starting on their work early so that the rest of the team had an easier time finishing off the missing pieces at the end.
 
 \end{document}
