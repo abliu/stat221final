@@ -108,23 +108,52 @@ L(y, \hat{y}) = \log(1+\exp(-y\hat{y}))
 \end{equation}
 The SGD update is given by:
 \begin{equation}
-\vec{\theta_{t+1}} = \vec{\theta_{t}} - \alpha_{t}\nabla Q(\vec{\theta_{t}}, y_t, \vec{x_t})
+\vec{\theta_{t+1}} = \vec{\theta_{t}} - \alpha_{t}\nabla Q(\vec{\theta_{t}}; y_t, \vec{x_t})
 \end{equation}
 where
 \begin{equation}
-Q(\vec{\theta_{t}}, y_t, \vec{x_t}) = \log\left(1+\exp(-y_t\cdot\vec{x_t^{T}}\vec{\theta_t})\right) + \frac{\lambda}{2}\|\vec{\theta_t}\|^2
+Q(\vec{\theta_{t}}; y_t, \vec{x_t}) = \log\left(1+\exp(-y_t\cdot\vec{x_t^{T}}\vec{\theta_t})\right) + \frac{\lambda}{2}\|\vec{\theta_t}\|^2
 \end{equation}
-The gradient $\nabla Q(\vec{\theta_{t}}, y_t, \vec{x_t})$ can be calculated as follows:
+The gradient $\nabla Q(\vec{\theta_{t}}; y_t, \vec{x_t})$ can be calculated as follows:
 \begin{align*}
-\nabla Q(\vec{\theta_{t}}, y_t, \vec{x_t}) &= \left(\frac{1}{1+\exp(-y_t\cdot\vec{x_t^{T}}\vec{\theta_t})} \right)\left(\exp(-y_t\cdot\vec{x_t^{T}}\vec{\theta_t})\right)\left(-y_t\cdot\vec{x_t}\right) + \lambda\vec{\theta_t}\\
+\nabla Q(\vec{\theta_{t}}; y_t, \vec{x_t}) &= \left(\frac{1}{1+\exp(-y_t\cdot\vec{x_t^{T}}\vec{\theta_t})} \right)\left(\exp(-y_t\cdot\vec{x_t	^{T}}\vec{\theta_t})\right)\left(-y_t\cdot\vec{x_t}\right) + \lambda\vec{\theta_t}\\
 &= \frac{-y_t\exp(-y_t\cdot\vec{x_t^{T}}\vec{\theta_t})}{1+\exp(-y_t\cdot\vec{x_t^{T}}\vec{\theta_t})}\cdot\vec{x_t} + \lambda\vec{\theta_t}\\
+&= \frac{-y_t}{\exp(y_t\cdot\vec{x_t^{T}}\vec{\theta_t})+1}\cdot\vec{x_t} + \lambda\vec{\theta_t}\\
 \end{align*}
+So, the SGD update for the log-loss function is:
+\begin{equation}
+\vec{\theta_{t+1}} = \vec{\theta_{t}} - \alpha_{t}\left( \frac{-y_t}{\exp(y_t\cdot\vec{x_t^{T}}\vec{\theta_t})+1}\cdot\vec{x_t} + \lambda\vec{\theta_t} \right)
+\end{equation}
 The implicit update can be derived in much the same way as above. We have the following:
 \begin{align*}
-&= \frac{-y_t}{\exp(y_t\cdot\vec{x_t^{T}}\vec{\theta_t})+1}\cdot\vec{x_t} + \lambda\vec{\theta_t}
 \vec{\theta_{t+1}} &= \vec{\theta_t} - \alpha_t \nabla Q(\vec{\theta_{t+1}}, y_t, \vec{x_t})\\
 &= \vec{\theta_t} - \alpha_t \left(\frac{-y_t}{\exp(y_t\cdot\vec{x_t^{T}}\vec{\theta_{t+1}})+1}\cdot\vec{x_t} + \lambda\vec{\theta_{t+1}} \right)
 \end{align*}\\
+Note that we cannot find an analytic solution to the above. Instead, we proceed in a different direction. First, for the implicit update, we drop the regularization term for simplicity, as we believe the implicit method would work well even without regularization. Next, we let $h(x) = e^{x} / (1+e^{x})$ and transform $y_t\in\{-1, 1\}$ to $y_t\in\{0, 1\}$ as follows: 
+
+For $y_t = -1$, we have:
+\begin{align*}
+\vec{\theta_{t+1}} &= \vec{\theta_t} - \frac{\alpha_t\vec{x_t}}{1+\exp\left(-\vec{x}_t^{T}\vec{\theta_{t+1}}\right)}\\
+&= \vec{\theta_t} + \alpha_t\left( y_t - h(\vec{x}_t^{T}\vec{\theta_{t+1}})\right)\vec{x_t}\\
+\end{align*}
+where $y_t = 0$.
+
+For $y_t = 1$, we have:
+\begin{align*}
+\vec{\theta_{t+1}} &= \vec{\theta_t} + \frac{\alpha_t\vec{x_t}}{1+\exp\left(\vec{x}_t^{T}\vec{\theta_{t+1}}\right)}\\
+&= \vec{\theta_t} + \alpha_t\left( y_t - h(\vec{x}_t^{T}\vec{\theta_{t+1}})\right)\vec{x_t}\\
+\end{align*}
+where $y_t = 1$.
+
+To solve $\vec{\theta_{t+1}} = \vec{\theta_t} + \alpha_t\left( y_t - h(\vec{x}_t^{T}\vec{\theta_{t+1}})\right)\vec{x_t}$, $y_t\in\{0, 1\}$, we can rewrite as:
+\begin{equation}
+\vec{\theta_{t+1}} = \vec{\theta_t} + \xi_t\vec{x_t}
+\end{equation}
+where
+\begin{equation}
+\xi_t = \alpha_t \left(y_t - h(\vec{x}_t^{T}\vec{\theta_t} + \xi_t\|\vec{x_t}\|^{2})\right)
+\end{equation}
+We now can implement any root-finding procedure efficiently, as long as we have some bounds on where the root will be. These bounds we can find easily, as follows: let $r_t = \alpha_t\left(y_t - h(\vec{x}_t^{T}\vec{\theta_t})\right)$. Then, if $r_t < 0$, then $\xi_t \in [r_t, 0]$; if $r_t > 0$, then $\xi_t \in [0, r_t]$.
 
 \textbf{Hinge-loss.} The hinge loss function is given by:
 \begin{equation}
@@ -132,29 +161,29 @@ L(y, \hat{y}) = \max(0, 1-y\hat{y})
 \end{equation}
 The SGD update is given by:
 \begin{equation}
-\vec{\theta_{t+1}} = \vec{\theta_{t}} - \alpha_{t}\nabla Q(\vec{\theta_{t}}, y_t, \vec{x_t})
+\vec{\theta_{t+1}} = \vec{\theta_{t}} - \alpha_{t}\nabla Q(\vec{\theta_{t}}; y_t, \vec{x_t})
 \end{equation}
 
 where
 
 \begin{equation}
-Q(\vec{\theta_{t}}, y_t, \vec{x_t}) = \max(0, 1-y_t\cdot\vec{x_t^{T}}\vec{\theta_t}) + \frac{\lambda}{2}\|\vec{\theta_t}\|^2
+Q(\vec{\theta_{t}}; y_t, \vec{x_t}) = \max(0, 1-y_t\cdot\vec{x_t^{T}}\vec{\theta_t}) + \frac{\lambda}{2}\|\vec{\theta_t}\|^2
 \end{equation}
 
-The gradient $\nabla Q(\vec{\theta_{t}}, y_t, \vec{x_t})$ can be calculated as follows, where we consider two cases depending on the sign of $1-y_t\cdot\vec{x_t^{T}}\vec{\theta_t}$:
+The gradient $\nabla Q(\vec{\theta_{t}}; y_t, \vec{x_t})$ can be calculated as follows, where we consider two cases depending on the sign of $1-y_t\cdot\vec{x_t^{T}}\vec{\theta_t}$:
 
 \begin{enumerate}[1.]
-\item If $1-y_t\cdot\vec{x_t^{T}}\vec{\theta_t} < 0$, then $Q(\vec{\theta_{t}}, y_t, \vec{x_t}) = \frac{\lambda}{2}\|\vec{\theta_t}\|^2$. Then,
+\item If $1-y_t\cdot\vec{x_t^{T}}\vec{\theta_t} < 0$, then $Q(\vec{\theta_{t}}; y_t, \vec{x_t}) = \frac{\lambda}{2}\|\vec{\theta_t}\|^2$. Then,
 
 \begin{align*}
-\nabla Q(\vec{\theta_{t}}, y_t, \vec{x_t}) &= \nabla\left(\frac{\lambda}{2}\|\vec{\theta_t}\|^2\right)\\
+\nabla Q(\vec{\theta_{t}}; y_t, \vec{x_t}) &= \nabla\left(\frac{\lambda}{2}\|\vec{\theta_t}\|^2\right)\\
 &= \lambda \vec{\theta_t}
 \end{align*}
 
-\item If $1-y_t\cdot\vec{x_t^{T}}\vec{\theta_t} \geq 0$, then $Q(\vec{\theta_{t}}, y_t, \vec{x_t}) = 1-y_t\cdot\vec{x_t^{T}}\vec{\theta_t}+\frac{\lambda}{2}\|\vec{\theta_t}\|^2$. Then,
+\item If $1-y_t\cdot\vec{x_t^{T}}\vec{\theta_t} \geq 0$, then $Q(\vec{\theta_{t}}; y_t, \vec{x_t}) = 1-y_t\cdot\vec{x_t^{T}}\vec{\theta_t}+\frac{\lambda}{2}\|\vec{\theta_t}\|^2$. Then,
 
 \begin{align*}
-\nabla Q(\vec{\theta_{t}}, y_t, \vec{x_t}) &= \nabla\left(1-y_t\cdot\vec{x_t^{T}}\vec{\theta_t}+\frac{\lambda}{2}\|\vec{\theta_t}\|^2\right)\\
+\nabla Q(\vec{\theta_{t}}; y_t, \vec{x_t}) &= \nabla\left(1-y_t\cdot\vec{x_t^{T}}\vec{\theta_t}+\frac{\lambda}{2}\|\vec{\theta_t}\|^2\right)\\
 &= \nabla\left( -y_t\cdot\vec{x_t^{T}}\vec{\theta_t} \right) + \lambda \vec{\theta_t}\\
 &= -y_t\cdot\vec{x_t} + \lambda\vec{\theta_t}
 \end{align*}
@@ -218,19 +247,19 @@ L(y, \hat{y}) = (y-\hat{y})^2
 
 The SGD update is given by:
 \begin{equation}
-\vec{\theta_{t+1}} = \vec{\theta_{t}} - \alpha_{t}\nabla Q(\vec{\theta_{t}}, y_t, \vec{x_t})
+\vec{\theta_{t+1}} = \vec{\theta_{t}} - \alpha_{t}\nabla Q(\vec{\theta_{t}}; y_t, \vec{x_t})
 \end{equation}
 
 where
 
 \begin{equation}
-Q(\vec{\theta_{t}}, y_t, \vec{x_t}) = \left(y_t - \vec{x_t^T}\vec{\theta_t}\right)^2 + \frac{\lambda}{2}\|\vec{\theta_t}\|^2
+Q(\vec{\theta_{t}}; y_t, \vec{x_t}) = \left(y_t - \vec{x_t^T}\vec{\theta_t}\right)^2 + \frac{\lambda}{2}\|\vec{\theta_t}\|^2
 \end{equation}
 
-The gradient $\nabla Q(\vec{\theta_{t}}, y_t, \vec{x_t})$ can be calculated as follows:
+The gradient $\nabla Q(\vec{\theta_{t}}; y_t, \vec{x_t})$ can be calculated as follows:
 
 \begin{align*}
-\nabla Q(\vec{\theta_{t}}, y_t, \vec{x_t}) &= 2\left(y_t - \vec{x_t^T}\vec{\theta_t}\right)\left(-\vec{x_t}\right) + \lambda\vec{\theta_t}\\
+\nabla Q(\vec{\theta_{t}}; y_t, \vec{x_t}) &= 2\left(y_t - \vec{x_t^T}\vec{\theta_t}\right)\left(-\vec{x_t}\right) + \lambda\vec{\theta_t}\\
 &= -2(y_t-\vec{x_t^T}\vec{\theta_t})\vec{x_t} + \lambda\vec{\theta_t}\\
 \end{align*}
 
